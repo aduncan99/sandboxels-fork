@@ -303,43 +303,37 @@ elements.E2L_button = {
     state: "solid",
     category: "logic",
     tick: function(pixel){
-        if (pixel.start === pixelTicks){
-			pixel.cooldown = 0;
-			pixel.toggleMode = 1;
-		}
         for (var i = 0; i < adjacentCoords.length; i++) {
             var coord = adjacentCoords[i];
             var x = pixel.x+coord[0];
             var y = pixel.y+coord[1];
             if (!isEmpty(x,y,true)) {           
-                if ((pixelMap[x][y].charge || pixelMap[x][y].chargeCD) && pixel.cooldown == 0){
-                    for (var i = 0; i < adjacentCoords.length; i++) {
-                        var coord = adjacentCoords[i];
+                if ((pixelMap[x][y].charge || pixelMap[x][y].chargeCD)){
+                    for (var j = 0; j < adjacentCoords.length; j++) {
+                        var coord = adjacentCoords[j];
                         var x = pixel.x+coord[0];
                         var y = pixel.y+coord[1];
                         if (!isEmpty(x,y,true)) {           
                             if (pixelMap[x][y].element == "logic_wire"){
-                                if (pixel.toggleMode == 1){
                                 pixelMap[x][y].lstate = 2
                                 pixelMap[x][y].color = pixelColorPick(pixel, "#ffe49c");
-                                } else {
-                                pixelMap[x][y].lstate = -2
-                                pixelMap[x][y].color = pixelColorPick(pixel, "#3d4d2c");
-                                }
                             }
                         }
                     }
-                    pixel.cooldown = 5
-                    if (pixel.toggleMode){
-                        pixel.toggleMode = 0;
-                    } else {
-                        pixel.toggleMode = 1;
-                    }
+                    return;
                 }
             }
         }
-        if (pixel.cooldown){
-            pixel.cooldown = pixel.cooldown - 1
+        for (var i = 0; i < adjacentCoords.length; i++) {
+            var coord = adjacentCoords[i];
+            var x = pixel.x+coord[0];
+            var y = pixel.y+coord[1];
+            if (!isEmpty(x,y,true)) {
+                if (pixelMap[x][y].element == "logic_wire" && pixelMap[x][y].lstate > 0){
+                    pixelMap[x][y].lstate = -2
+                    pixelMap[x][y].color = pixelColorPick(pixel, "#3d4d2c");
+                }
+            }
         }
     }
 }
@@ -461,4 +455,40 @@ elements.logic_unshock = {
         if (pixel.element == "logic_wire"){pixel.lstate = -2; pixel.color = pixelColorPick(pixel, "#3d4d2c")}
     },
     excludeRandom: true,
+}
+elements.list_all_wifi = {
+    color: elements.lookup.color,
+    category: "tools",
+    tool: function(){},
+    excludeRandom: true,
+    onSelect: function(){
+        let results = {}
+        for (let i in currentPixels){
+            var otherPixel = currentPixels[i]
+            if (["logic_receiver", "logic_transmitter"].includes(otherPixel.element)){
+                if (otherPixel.channel){
+                    if (results[otherPixel.channel]){
+                        results[otherPixel.channel].push([otherPixel.x, otherPixel.y])
+                    } else {
+                        results[otherPixel.channel] = [[otherPixel.x, otherPixel.y]]
+                    }
+                }
+            }
+        }
+        console.log(results)
+        let keys = Object.keys(results)
+        let ans1 = prompt(keys.length + " unique channels have been found. Type 1 to list them all.", 1)
+        if(ans1 == "1"){
+            ans2 = prompt("["+keys +"]"+ " These are all the channels found. Type the name of one of them to see the positions of all pixels with that channel.", keys[0])
+            if (keys.includes(ans2)){
+                let finalString = ""
+                for (i in results[ans2]){
+                    finalString += ", ["
+                    finalString += results[ans2][i]
+                    finalString += "]"
+                }
+                alert(finalString)
+            }
+        }
+    }
 }
